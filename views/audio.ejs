@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+  <title>Audio Playback</title>
+  <link rel="icon" href="/logo.png" type="image/png">
+  <style>
+    /* General Styles */
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #FFF7D1; /* Soft yellow background */
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      color: #333;
+      text-align: center;
+    }
+    h1, h2 {
+      text-align: center;
+      color: #6A42C2;
+    }
+
+    h1 {
+      margin-top: 20px;
+      font-size: 2em;
+    }
+
+    h2 {
+      margin-top: 10px;
+      font-size: 1.5em;
+    }
+
+    /* Navigation Header Styles */
+
+    nav {
+  background-color: #6A42C2;
+  padding: 10px;
+  display: flex;
+  justify-content: space-between; /* This will place items at both ends */
+  align-items: center; /* Aligns items vertically at the center */
+  color: white;
+}
+
+nav .logo {
+  font-size: 1.8em;
+  font-weight: bold;
+  color: white;
+}
+
+nav a {
+  color: white;
+  text-decoration: none;
+  padding: 10px 20px;
+  font-size: 1.2em;
+  border-radius: 4px;
+  transition: background-color 0.3s;
+}
+
+nav a:hover {
+  background-color: #563A9C;
+}
+
+    /* Main content styles */
+    h1 {
+      font-size: 2.5rem;
+      margin-top: 30px;
+      color: #6A42C2; /* Deep purple for headings */
+      font-weight: 600;
+    }
+
+    /* Audio Player Container */
+    audio {
+      width: 100%;
+      max-width: 600px;
+      margin: 20px auto;
+      border-radius: 6px;
+      background-color: #fff;
+      padding: 10px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Download Link */
+    a {
+      display: inline-block;
+      /* margin-top: 20px; */
+      font-size: 1.2rem;
+      color: #8B5DFF; /* Vibrant purple for link */
+      text-decoration: none;
+      padding: 12px 20px;
+      /* background-color: #ffffff; */
+      border-radius: 6px;
+      /* border: 1px solid #8B5DFF; */
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
+
+    a:hover {
+      background-color: #8B5DFF; /* Vibrant purple hover effect */
+      color: white;
+    }
+
+    /* Responsive Design */
+    @media screen and (max-width: 768px) {
+      h1 {
+        font-size: 2rem;
+      }
+
+      audio {
+        width: 90%;
+      }
+
+      a {
+        font-size: 1.1rem;
+        padding: 10px 18px;
+      }
+    }
+
+    @media screen and (max-width: 480px) {
+      h1 {
+        font-size: 1.5rem;
+      }
+
+      audio {
+        width: 100%;
+      }
+
+      a {
+        font-size: 1rem;
+        padding: 8px 16px;
+      }
+    }
+
+    /* File Content Section */
+    .file-content {
+      margin-top: 30px;
+      padding: 20px;
+      background-color: #f9f9f9;
+      border-radius: 6px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      max-width: 800px;
+      margin-left: auto;
+      margin-right: auto;
+      white-space: pre-wrap; /* Preserve line breaks */
+      font-size: 1.1rem;
+      color: #333;
+      text-align: left;
+      line-height: 1.6;
+      max-height: 300px; /* Limit height */
+      overflow-y: auto; /* Scroll if content exceeds height */
+      position: relative;
+    }
+
+    .file-content span.highlight {
+      background-color: #FFFF99; /* Light yellow background for highlighted text */
+      color: #333;
+      transition: background-color 0.3s ease;
+    }
+
+    .file-content span.highlight.active {
+      background-color: #FF0; /* More prominent yellow when active */
+    }
+
+    .file-content p {
+      margin-bottom: 15px; /* Add space between paragraphs */
+      word-wrap: break-word;
+    }
+
+    .file-content code {
+      font-family: 'Courier New', Courier, monospace;
+      background-color: #f8f9fa;
+      padding: 3px;
+      border-radius: 4px;
+    }
+
+    .file-content a {
+      color: #8B5DFF; /* Vibrant purple for links */
+      text-decoration: none;
+    }
+    nav {
+  background-color: #6A42C2;
+  padding: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: white;
+}
+
+nav .logo {
+  font-size: 1.8em;
+  font-weight: bold;
+  color: white;
+  text-decoration: none; /* Ensures the text isn't underlined */
+}
+
+nav a {
+  /* color: white; */
+  text-decoration: none;
+  padding: 10px 20px;
+  font-size: 1.2em;
+  border-radius: 4px;
+  transition: background-color 0.3s;
+}
+
+nav a:hover {
+  /* background-color: #563A9C; */
+}
+
+
+  </style>
+</head>
+<body>
+  <!-- Navigation Header -->
+  <nav>
+    <a href="/" class="logo">
+      <!-- Microphone Icon with Speechify text -->
+      <span>Speechify</span> <i class="fas fa-microphone"></i>
+    </a>
+    <a href="https://portfolio-himanshu-kumar-jha.onrender.com">Contact</a>
+  </nav>
+  
+
+  <!-- Audio Section -->
+  <section id="audioSection">
+    <h1>Your Audio File</h1>
+    <audio id="audioPlayer" controls>
+      <source src="<%= audioUrl %>" type="audio/mp3">
+      Your browser does not support the audio element.
+    </audio>
+  </section>
+
+  <!-- Download Link Section -->
+  <section id="downloadLink">
+    <br>
+    <a href="<%= audioUrl %>" download>Click here to download your audio</a>
+  </section>
+
+  <!-- File Content Section -->
+  <section id="contentSection">
+    <div class="file-content" id="fileContent">
+      <!-- Dynamically generated content will go here -->
+      <%= fileContent %>
+    </div>
+  </section>
+
+</body>
+</html>

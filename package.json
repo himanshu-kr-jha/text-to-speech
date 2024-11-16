@@ -1,0 +1,23 @@
+{
+  "name": "texttospeech",
+  "version": "1.0.0",
+  "description": "web app for text to speech conversion",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "himanshu-kumar-jha",
+  "license": "ISC",
+  "dependencies": {
+    "aws-sdk": "^2.1692.0",
+    "dotenv": "^16.4.5",
+    "ejs": "^3.1.10",
+    "express": "^4.21.1",
+    "fs": "^0.0.1-security",
+    "mime-types": "^2.1.35",
+    "multer": "^1.4.5-lts.1",
+    "nodemailer": "^6.9.16",
+    "winston": "^3.17.0",
+    "xlsx": "^0.18.5"
+  }
+}

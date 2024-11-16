@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Text to Speech Converter</title>
+  <!-- Font Awesome CDN -->
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+<link rel="icon" href="/logo.png" type="image/png">
+
+  <style>
+    /* General Styles */
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #FFF7D1;
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    h1, h2 {
+      text-align: center;
+      color: #6A42C2;
+    }
+
+    h1 {
+      margin-top: 20px;
+      font-size: 2em;
+    }
+
+    h2 {
+      margin-top: 10px;
+      font-size: 1.5em;
+    }
+
+    /* Navigation Bar Styles */
+    nav {
+      background-color: #6A42C2;
+      padding: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: white;
+    }
+
+    nav .logo {
+      font-size: 1.8em;
+      font-weight: bold;
+      color: white;
+    }
+
+    nav a {
+      color: white;
+      text-decoration: none;
+      padding: 10px 20px;
+      font-size: 1.2em;
+      border-radius: 4px;
+      transition: background-color 0.3s;
+    }
+
+    nav a:hover {
+      background-color: #563A9C;
+    }
+
+    /* Form Styles */
+    
+    form {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin: 20px 0;
+      background-color: #C5D3E8;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      width: 90%;
+      max-width: 550px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    input[type="file"],
+    input[type="text"],
+    input[type="email"],
+    #verificationCode{
+      width: 95%;
+      padding: 12px;
+      margin: 10px 0;
+      border: 1px solid #DDD;
+      border-radius: 4px;
+      font-size: 1em;
+      color: #6A42C2;
+    }
+
+    button {
+      padding: 12px 20px;
+      background-color: #8B5DFF;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 1.1em;
+      transition: background-color 0.3s;
+      margin-top: 10px;
+    }
+
+    button:hover {
+      background-color: #563A9C;
+    }
+
+    /* Audio Container */
+    #audioContainer {
+      text-align: center;
+      margin: 20px;
+    }
+
+    /* Form visibility */
+    #fileForm {
+      display: none;
+    }
+
+    #verificationForm {
+      display: none;
+      text-align: center;
+    }
+
+    #verificationForm input {
+      width: 50%;
+      padding: 12px;
+      margin-top: 10px;
+      border: 1px solid #DDD;
+      border-radius: 4px;
+      color: #6A42C2;
+    }
+
+    /* Responsive Styles */
+    @media screen and (max-width: 768px) {
+      h1 {
+        font-size: 1.8em;
+      }
+
+      h2 {
+        font-size: 1.4em;
+      }
+
+      form {
+        padding: 15px;
+      }
+
+      input[type="file"],
+      input[type="text"],
+      input[type="email"] {
+        width: 90%;
+      }
+
+      button {
+        width: 100%;
+        font-size: 18px;
+      }
+
+      #verificationForm input {
+        width: 90%;
+      }
+    }
+
+    @media screen and (max-width: 480px) {
+      h1 {
+        font-size: 1.5em;
+      }
+
+      button {
+        font-size: 16px;
+        padding: 10px 18px;
+      }
+
+      input[type="file"],
+      input[type="text"],
+      input[type="email"] {
+        padding: 10px;
+      }
+    }
+
+  </style>
+</head>
+<body>
+  <!-- Navigation Bar -->
+  <nav>
+    <div class="logo"><!-- Microphone Icon with Speechify text -->
+      <span>Speechify</span> <i class="fas fa-microphone"></i> </div>
+    <a href="https://portfolio-himanshu-kumar-jha.onrender.com">Contact</a>
+  </nav>
+
+  <h1>Upload your .txt file for Text-to-Speech Conversion</h1>
+  <form id="uploadForm" enctype="multipart/form-data">
+    <input type="file" id="fileInput" name="file" accept=".txt" required />
+    <button type="submit">Upload</button>
+  </form>
+
+  <div id="audioContainer"></div>
+  
+  <h1>Download Your Audio File</h1>
+  <form id="fileForm">
+    <label for="fileName">File Name:</label>
+    <input type="text" id="fileName" placeholder="file_name {without extension}" required><br><br>
+
+    <label for="email">Email ID:</label>
+    <input type="email" id="email" placeholder="example@gmail.com" required><br><br>
+
+    <button type="submit">Submit</button>
+  </form>
+
+  <div id="verificationForm" style="display:none;">
+    <h2>Enter Verification Code</h2>
+    <input type="text" id="verificationCode" required placeholder="Verification Code">
+    <button id="verifyCodeBtn">Verify</button>
+  </div>
+
+  <script>
+    const fileForm = document.getElementById('fileForm');
+    const verificationForm = document.getElementById('verificationForm');
+    const fileNameInput = document.getElementById('fileName');
+    const emailInput = document.getElementById('email');
+    const verificationCodeInput = document.getElementById('verificationCode');
+    const verifyCodeBtn = document.getElementById('verifyCodeBtn');
+
+    // Upload .txt file and send to backend for processing
+    document.getElementById('uploadForm').onsubmit = async function(event) {
+  event.preventDefault();
+  const fileInput = document.getElementById('fileInput');
+  const file = fileInput.files[0];
+  const formData = new FormData();
+  formData.append('file', file);
+
+  try {
+    const response = await fetch('/upload', {
+      method: 'POST',
+      body: formData
+    });
+
+    const result = await response.json();
+
+    if (response.ok) {
+      // If file is uploaded successfully, show the next form
+      alert('File uploaded successfully! Now, enter the file name and email to proceed.');
+      fileForm.style.display = 'block';
+    } else {
+      // If file exceeds the character limit, show the error message
+      const errorMessage = `
+        <h2>File Upload Error</h2>
+        <p>${result.message}</p>
+        <p>Max Length: ${result.maxLength}</p>
+        <p>Current Length: ${result.currentLength}</p>
+        <p>${result.suggestion}</p>
+      `;
+      document.getElementById('audioContainer').innerHTML = errorMessage;
+      fileForm.style.display = 'none'; // Hide the form to avoid further action
+    }
+  } catch (error) {
+    console.error('Error uploading file:', error);
+  }
+};
+
+
+    // Send verification code to user's email
+    fileForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const fileName = fileNameInput.value;
+      const email = emailInput.value;
+
+      const response = await fetch('/sendVerificationCode', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fileName, email }),
+      });
+
+      if (response.ok) {
+        alert('Verification code sent to your email!');
+        fileForm.style.display = 'none';
+        verificationForm.style.display = 'block';
+      } else {
+        alert('Error sending verification code');
+      }
+    });
+
+    // Verify the entered code and redirect to the audio page
+    verifyCodeBtn.addEventListener('click', async () => {
+      const email = emailInput.value;
+      const code = verificationCodeInput.value;
+
+      const response = await fetch('/verifyCode', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, code }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+
+        // Redirect to the server route that renders the audio.ejs page
+        window.location.href = `/getAudio/${data.fileName}`;
+      } else {
+        alert('Invalid verification code');
+      }
+    });
+  </script>
+</body>
+</html>
