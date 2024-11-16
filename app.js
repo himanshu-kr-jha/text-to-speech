@@ -86,9 +86,51 @@ app.get("/", (req, res) => {
   res.render("frontend");
 });
 
+app.get("/editor", (req, res) => {
+  res.render("texteditor");
+});
+
+app.post('/submit-editor', upload.none(), async (req, res) => {
+  const editorContent = req.body.content;  // Content from the editor
+
+  if (!editorContent) {
+    return res.status(400).send('No content received!');
+  }
+
+  // Generate a .txt file from the editor content
+  const fileName = `editor-content-${Date.now()}.txt`;
+  const filePath = path.join(__dirname, fileName);
+
+  fs.writeFileSync(filePath, editorContent);  // Create the .txt file locally
+
+  // Read the file into a buffer
+  const fileBuffer = fs.readFileSync(filePath);
+
+  // Set up parameters for S3 upload
+  if (checkTextLimit(editorContent)) {
+    const params = {
+      Bucket: sourceBucketName,
+      Key: `uploads/${fileName}`,
+      Body: fileBuffer,
+      ContentType: 'text/plain'
+    };
+    s3.upload(params, (err, data) => {
+      // Delete the local file after uploading
+      fs.unlinkSync(filePath);
+  
+      if (err) {
+        console.error('Error uploading file:', err);
+        return res.status(500).send('Error uploading file.');
+      }
+  
+      // Return the S3 file URL in the response
+      return res.json({ message: 'File uploaded successfully!', url: data.Location });
+    });
+  }
+});
 // Endpoint to handle file upload and save to S3
 app.post('/upload', upload.single('file'), async (req, res) => {
-  const filePath = req.file.path;
+   const filePath = req.file.path;
 
   try {
     // Dynamically set content type based on file extension
@@ -115,15 +157,15 @@ app.post('/upload', upload.single('file'), async (req, res) => {
         fileName: fileNameWithoutExtension,
         contentPreview: fileContent.slice(0, 200),
       });
-    }else {
+    } else {
       // Respond with an error message if the text exceeds the limit
       res.status(400).json({
-          message: 'File content exceeds the maximum allowed character limit of 3000.',
-          maxLength: 3000, // Include the maximum allowed length in the response
-          currentLength: fullfileContent.length, // Include the current length of the file content
-          suggestion: 'Please reduce the text size or split the content into smaller parts.'
+        message: 'File content exceeds the maximum allowed character limit of 3000.',
+        maxLength: 3000, // Include the maximum allowed length in the response
+        currentLength: fullfileContent.length, // Include the current length of the file content
+        suggestion: 'Please reduce the text size or split the content into smaller parts.'
       });
-  }
+    }
   }
   catch (error) {
     logger.error(`Error uploading the file: ${error.message}`);

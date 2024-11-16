@@ -1,14 +1,17 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Text to Speech Converter</title>
   <!-- Font Awesome CDN -->
-<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
-<link rel="icon" href="/logo.png" type="image/png">
-
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+  <link rel="icon" href="/logo.png" type="image/png">
+  <script src="script.js"></script>
+  <link rel="stylesheet" href="style.css">
   <style>
+    /* General Styles */
     /* General Styles */
     body {
       font-family: Arial, sans-serif;
@@ -17,8 +20,8 @@
       padding: 0;
       box-sizing: border-box;
     }
-
-    h1, h2 {
+    h1,
+    h2 {
       text-align: center;
       color: #6A42C2;
     }
@@ -63,7 +66,11 @@
     }
 
     /* Form Styles */
-    
+    #fileInput {
+      color: #563A9C;
+      font-size: 1.1rem;
+    }
+
     form {
       display: flex;
       flex-direction: column;
@@ -82,7 +89,7 @@
     input[type="file"],
     input[type="text"],
     input[type="email"],
-    #verificationCode{
+    #verificationCode {
       width: 95%;
       padding: 12px;
       margin: 10px 0;
@@ -180,24 +187,127 @@
       }
     }
 
+    /* Footer Styles */
+    footer {
+      background-color: #6A42C2;
+      color: white;
+      text-align: center;
+      padding: 10px 0;
+      position: relative;
+      bottom: 0;
+      width: 100%;
+      margin-top: 10px;
+    }
+
+    footer a {
+      color: white;
+      text-decoration: none;
+    }
+
+    footer a:hover {
+      text-decoration: underline;
+    }
+
+    #editorModal {
+      display: none;
+    }
+
+    /* Modal Styles */
+    #editorModal {
+      display: none;
+      /* Hide modal by default */
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      display: none;
+      /* Ensures the modal is hidden initially */
+    }
+
+    #editorModal .modal-content {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background-color: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      width: 80%;
+      max-width: 600px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    #openEditorBtn {
+            /* display: flex;  */
+            /* flex-direction: column; */
+            /* align-items: center; */
+            /* text-align: center; */
+            /* margin: 20px 0; */
+            margin-right: 45%;
+            margin-left: 45%;
+            /* padding: 10px 20px; */
+            font-size: 16px;
+            cursor: pointer;
+        }
+    /* Other styles for modal content */
+    /* er styles for modal content */
   </style>
 </head>
+
 <body>
   <!-- Navigation Bar -->
   <nav>
     <div class="logo"><!-- Microphone Icon with Speechify text -->
-      <span>Speechify</span> <i class="fas fa-microphone"></i> </div>
+      <span>Speechify</span> <i class="fas fa-microphone"></i>
+    </div>
     <a href="https://portfolio-himanshu-kumar-jha.onrender.com">Contact</a>
   </nav>
 
+  <!-- Trigger Button -->
+  <button id="openEditorBtn">Open Editor</button>
+  <hr>
   <h1>Upload your .txt file for Text-to-Speech Conversion</h1>
+
+  <!-- Modal -->
+  <!-- Modal for editing content -->
+  <div id="editorModal" class="modal">
+    <div class="modal-content">
+      <span class="close" id="closeModal">&times;</span>
+      <div class="toolbar">
+        <button onclick="formatText('bold')"><b>B</b></button>
+        <button onclick="formatText('italic')"><i>I</i></button>
+        <button onclick="formatText('underline')"><u>U</u></button>
+        <select onchange="changeFont(this.value)">
+          <option value="Arial">Arial</option>
+          <option value="Courier New">Courier New</option>
+          <option value="Georgia">Georgia</option>
+          <option value="Times New Roman">Times New Roman</option>
+          <option value="Verdana">Verdana</option>
+        </select>
+        <input type="color" onchange="changeColor(this.value)">
+      </div>
+      <div class="editor" contenteditable="true" id="textEditor"></div>
+      <label for="filename">Enter File Name:</label>
+      <input type="text" name="filename" id="filename" placeholder="filename">
+      <button type="submit" onclick="submitContent()" id="modal_submit">Submit</button>
+    </div>
+  </div>
+
+  <!-- File Name Input outside Modal -->
+
+  <!-- Trigger Button to Open Modal -->
   <form id="uploadForm" enctype="multipart/form-data">
+    <label id="fileInput" for="fileInput">
+      <i class="fas fa-file-alt"></i> Choose a .txt file
+    </label>
     <input type="file" id="fileInput" name="file" accept=".txt" required />
     <button type="submit">Upload</button>
   </form>
 
   <div id="audioContainer"></div>
-  
+<hr>
   <h1>Download Your Audio File</h1>
   <form id="fileForm">
     <label for="fileName">File Name:</label>
@@ -215,7 +325,98 @@
     <button id="verifyCodeBtn">Verify</button>
   </div>
 
+  <script src="https://sdk.amazonaws.com/js/aws-sdk-2.1240.0.min.js"></script>
   <script>
+
+    // Modal open/close functionality
+    const modal = document.getElementById('editorModal');
+    const openEditorBtn = document.getElementById('openEditorBtn');
+    const closeModal = document.getElementById('closeModal');
+    const modalSubmit=document.getElementById('modal_submit');
+
+    // Open the modal
+    openEditorBtn.onclick = function () {
+      modal.style.display = 'block';
+    }
+
+    // Close the modal when the user clicks on <span> (x)
+    closeModal.onclick = function () {
+      modal.style.display = 'none';
+    }
+
+    // Close the modal if the user clicks outside of it
+    window.onclick = function (event) {
+      if (event.target === modal) {
+        modal.style.display = 'none';
+      }
+    }
+
+    // Function to upload the .txt file
+    async function uploadFile(file, filename) {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      try {
+        const response = await fetch('/upload', {
+          method: 'POST',
+          body: formData,
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+          // File uploaded successfully, now show verification form
+          alert(`File uploaded successfully with file name:${filename} ! Enter file name and email to proceed.`);
+          fileForm.style.display = 'block'; // Show the form to enter name and email
+        } else {
+          // Show error message if file exceeds the character limit
+          const errorMessage = `
+                    <h2>File Upload Error</h2>
+                    <p>${result.message}</p>
+                    <p>Max Length: ${result.maxLength}</p>
+                    <p>Current Length: ${result.currentLength}</p>
+                    <p>${result.suggestion}</p>
+                `;
+          document.getElementById('audioContainer').innerHTML = errorMessage;
+          fileForm.style.display = 'none'; // Hide the form
+        }
+      } catch (error) {
+        console.error('Error uploading file:', error);
+      }
+    }
+
+    // Function to handle modal submit (Upload file from the modal editor)
+    function submitContent() {
+      const editorContent = document.getElementById('textEditor').innerText;
+      const fileName = document.getElementById('filename').value.trim();
+
+      if (!editorContent.trim()) {
+        alert('Content cannot be empty!');
+        return;
+      }
+
+      // Generate a .txt file and upload to S3
+      const blob = new Blob([editorContent], { type: 'text/plain' });
+      const file = new File([blob], fileName + '.txt');
+      console.log(file);
+      // Upload the file
+      uploadFile(file, fileName);
+      modal.style.display = 'none';
+    }
+
+
+    // Handle form submission for the regular file upload
+    document.getElementById('uploadForm').onsubmit = function (event) {
+      event.preventDefault();
+      const fileInput = document.getElementById('fileInput');
+      const file = fileInput.files[0];
+
+      if (file) {
+        uploadFile(file);
+      }
+    };
+
+    // Show the verification form after file upload
     const fileForm = document.getElementById('fileForm');
     const verificationForm = document.getElementById('verificationForm');
     const fileNameInput = document.getElementById('fileName');
@@ -223,49 +424,10 @@
     const verificationCodeInput = document.getElementById('verificationCode');
     const verifyCodeBtn = document.getElementById('verifyCodeBtn');
 
-    // Upload .txt file and send to backend for processing
-    document.getElementById('uploadForm').onsubmit = async function(event) {
-  event.preventDefault();
-  const fileInput = document.getElementById('fileInput');
-  const file = fileInput.files[0];
-  const formData = new FormData();
-  formData.append('file', file);
-
-  try {
-    const response = await fetch('/upload', {
-      method: 'POST',
-      body: formData
-    });
-
-    const result = await response.json();
-
-    if (response.ok) {
-      // If file is uploaded successfully, show the next form
-      alert('File uploaded successfully! Now, enter the file name and email to proceed.');
-      fileForm.style.display = 'block';
-    } else {
-      // If file exceeds the character limit, show the error message
-      const errorMessage = `
-        <h2>File Upload Error</h2>
-        <p>${result.message}</p>
-        <p>Max Length: ${result.maxLength}</p>
-        <p>Current Length: ${result.currentLength}</p>
-        <p>${result.suggestion}</p>
-      `;
-      document.getElementById('audioContainer').innerHTML = errorMessage;
-      fileForm.style.display = 'none'; // Hide the form to avoid further action
-    }
-  } catch (error) {
-    console.error('Error uploading file:', error);
-  }
-};
-
-
-
-    // Send verification code to user's email
+    // Handle the file name and email submission
     fileForm.addEventListener('submit', async (e) => {
       e.preventDefault();
-      
+
       const fileName = fileNameInput.value;
       const email = emailInput.value;
 
@@ -284,7 +446,7 @@
       }
     });
 
-    // Verify the entered code and redirect to the audio page
+    // Handle verification and redirect to getAudioUrl API
     verifyCodeBtn.addEventListener('click', async () => {
       const email = emailInput.value;
       const code = verificationCodeInput.value;
@@ -297,13 +459,15 @@
 
       if (response.ok) {
         const data = await response.json();
-
-        // Redirect to the server route that renders the audio.ejs page
+        // Redirect to the getAudioUrl API or the audio page
         window.location.href = `/getAudio/${data.fileName}`;
       } else {
         alert('Invalid verification code');
       }
     });
   </script>
+
+  </script>
 </body>
+
 </html>
