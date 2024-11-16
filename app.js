@@ -1,4 +1,4 @@
-if(process.env.NODE_ENV!="production"){
+if (process.env.NODE_ENV != "production") {
   require('dotenv').config()
 }
 const express = require('express');
@@ -17,7 +17,7 @@ app.use(express.static(path.join(__dirname, "/public")));
 const port = process.env.PORT || 3000;
 app.use(express.json()); // Middleware to parse JSON bodies
 app.use(express.urlencoded({ extended: true })); // Middleware to parse form data
-let fullFileContent;
+let fullfileContent;
 
 // AWS S3 setup using environment variables
 const s3 = new AWS.S3({
@@ -25,6 +25,16 @@ const s3 = new AWS.S3({
   accessKeyId: process.env.AWS_ACCESS_KEY_ID,
   secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
 });
+function checkTextLimit(text) {
+  const MAX_LENGTH = 3000;
+  if (text.length > MAX_LENGTH) {
+    console.log(`Text exceeds the limit of ${MAX_LENGTH} characters.`);
+    return false;
+  } else {
+    console.log(`Text is within the limit of ${MAX_LENGTH} characters.`);
+    return true;
+  }
+}
 
 // Multer setup for file handling
 const upload = multer({ dest: 'uploads/' });
@@ -79,40 +89,51 @@ app.get("/", (req, res) => {
 // Endpoint to handle file upload and save to S3
 app.post('/upload', upload.single('file'), async (req, res) => {
   const filePath = req.file.path;
-  
+
   try {
     // Dynamically set content type based on file extension
     const contentType = mime.lookup(req.file.originalname) || 'application/octet-stream';
     const fileContent = fs.readFileSync(filePath, 'utf-8'); // Read as UTF-8 string for human-readable text
-    fullFileContent = fileContent;
+    fullfileContent = fileContent;
 
     // Log the file upload process
     logger.info(`Processing file upload: ${req.file.originalname}`);
+    if (checkTextLimit(fullfileContent)) {
+      const uploadParams = {
+        Bucket: sourceBucketName,
+        Key: `uploads/${req.file.originalname}`, // File name in S3
+        Body: fs.readFileSync(filePath), // Re-read the file to upload it
+        ContentType: contentType,
+      };
 
-    const uploadParams = {
-      Bucket: sourceBucketName,
-      Key: `uploads/${req.file.originalname}`, // File name in S3
-      Body: fs.readFileSync(filePath), // Re-read the file to upload it
-      ContentType: contentType,
-    };
+      const data = await s3.upload(uploadParams).promise();
+      logger.info(`File uploaded successfully: ${data.Location}`);
 
-    const data = await s3.upload(uploadParams).promise();
-    logger.info(`File uploaded successfully: ${data.Location}`);
-    
-    const fileNameWithoutExtension = path.parse(req.file.originalname).name; // Get the file name without extension
-    res.json({
-      message: 'File is being processed. Please wait...',
-      fileName: fileNameWithoutExtension,
-      contentPreview: fileContent.slice(0, 200),
-    });
-    
-  } catch (error) {
+      const fileNameWithoutExtension = path.parse(req.file.originalname).name; // Get the file name without extension
+      res.json({
+        message: 'File is being processed. Please wait...',
+        fileName: fileNameWithoutExtension,
+        contentPreview: fileContent.slice(0, 200),
+      });
+    }else {
+      // Respond with an error message if the text exceeds the limit
+      res.status(400).json({
+          message: 'File content exceeds the maximum allowed character limit of 3000.',
+          maxLength: 3000, // Include the maximum allowed length in the response
+          currentLength: fullfileContent.length, // Include the current length of the file content
+          suggestion: 'Please reduce the text size or split the content into smaller parts.'
+      });
+  }
+  }
+  catch (error) {
     logger.error(`Error uploading the file: ${error.message}`);
     res.status(500).send('Error uploading the file');
   } finally {
     // Clean up the file from local uploads folder (async)
     fs.promises.unlink(filePath).catch(err => logger.error(`Error cleaning up file: ${err.message}`));
   }
+
+
 });
 
 // Function to save email and file content to an Excel sheet
@@ -183,14 +204,14 @@ app.post('/verifyCode', async (req, res) => {
   }
 
   const storedCode = verificationCodes[email];
-  
+
   if (!storedCode) {
     return res.status(400).send('No verification code sent for this email');
   }
 
   if (parseInt(code) === storedCode.code) {
     const fileName = storedCode.fileName;
-    await saveToExcel(email, fullFileContent);  // Save to Excel
+    await saveToExcel(email, fullfileContent);  // Save to Excel
     res.json({ fileName });
   } else {
     logger.warn(`Invalid verification code attempt for ${email}`);
@@ -211,7 +232,7 @@ app.get('/getAudio/:fileName', async (req, res) => {
 
   try {
     const url = `https://${destinationBucketName}.s3.${process.env.AWS_REGION}.amazonaws.com/${Key}`;
-    res.render("audio", { audioUrl: url, fileContent: fullFileContent });
+    res.render("audio", { audioUrl: url, fileContent: fullfileContent });
   } catch (error) {
     logger.error(`Error fetching the audio file: ${error.message}`);
     res.status(500).send('Error fetching the audio file');
